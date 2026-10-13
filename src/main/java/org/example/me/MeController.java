@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MeController {
     @GetMapping("/me")
     public String me(Authentication authentication) {
-        return "You are logged in as " + authentication.getName();
+        return "You are logged in as " + authentication.getName()
+                + ", authorities: " + authentication.getAuthorities();
     }
 }
