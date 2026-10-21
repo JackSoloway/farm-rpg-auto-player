@@ -2,5 +2,9 @@ package org.example.user;
 
 public enum Role {
     USER,
-    ADMIN
+    ADMIN;
+
+    public String authority() {
+        return "ROLE_" + name();
+    }
 }
