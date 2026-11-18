@@ -73,6 +73,35 @@ export async function loginAccount(username: string, password: string): Promise<
   return readSession(await response.json())
 }
 
+export async function loginGameAccount(username: string, password: string, token: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch('/gameAuth/login', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    })
+  } catch {
+    throw new LoginError(0, 'Сервер недоступен. Запустите бэкенд на порту 8080.')
+  }
+
+  const fallback = 'Не удалось войти в игру.'
+  if (response.status === 403) {
+    throw new LoginError(403, 'Войдите в приложение снова.')
+  }
+  if (!response.ok) {
+    const message = response.status >= 500 ? fallback : await readError(response, fallback)
+    throw new LoginError(response.status, message)
+  }
+  if (!response.headers.get('Content-Type')?.includes('application/json')) {
+    throw new LoginError(response.status, fallback)
+  }
+}
+
 function readSession(body: unknown): Session {
   if (typeof body !== 'object' || body === null) {
     throw new LoginError(0, 'Не удалось прочитать ответ сервера.')

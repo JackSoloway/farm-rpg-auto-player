@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 public class SecurityConfig {
@@ -30,7 +31,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         .requestMatchers("/admin/**", "/h2-console/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/auth/**"))
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/h2-console/**", "/auth/**")
+                        .ignoringRequestMatchers(PathPatternRequestMatcher.withDefaults()
+                                .matcher(HttpMethod.POST, "/gameAuth/login")))
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(Customizer.withDefaults())

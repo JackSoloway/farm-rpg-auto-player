@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { LoginError, loginAccount } from '../api/auth.ts'
+import { LoginError, loginAccount, loginGameAccount } from '../api/auth.ts'
 import { roleLabel } from '../roleLabel.ts'
 import { clearSession, loadSession, saveSession, type Session } from '../session.ts'
 import Sprout from './Sprout.tsx'
@@ -10,19 +10,22 @@ type FieldErrors = {
   password?: string
 }
 
-type LoginPageProps = {
-  onRegister: () => void
-}
+type LoginPageProps =
+  | { onRegister: () => void; onGameAuth: () => void }
+  | { gameToken: string; onBack: () => void }
 
-export default function LoginPage({ onRegister }: LoginPageProps) {
+export default function LoginPage(props: LoginPageProps) {
+  const game = 'gameToken' in props
+  const title = game ? 'Вход в игру' : 'Вход'
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
-  const [session, setSession] = useState<Session | null>(() => loadSession())
+  const [session, setSession] = useState<Session | null>(() => game ? null : loadSession())
+  const [gameUsername, setGameUsername] = useState<string | null>(null)
 
   useEffect(() => {
-    document.title = 'Farm RPG — вход'
-  }, [])
+    document.title = `Farm RPG — ${title.toLowerCase()}`
+  }, [title])
 
   function validate(name: string, password: string): FieldErrors {
     const errors: FieldErrors = {}
@@ -34,7 +37,7 @@ export default function LoginPage({ onRegister }: LoginPageProps) {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
-    const username = String(data.get('username') ?? '')
+    const username = String(data.get('username') ?? '').trim()
     const password = String(data.get('password') ?? '')
     const errors = validate(username, password)
     setFieldErrors(errors)
@@ -49,9 +52,14 @@ export default function LoginPage({ onRegister }: LoginPageProps) {
     setFormError(null)
     setPending(true)
     try {
-      const nextSession = await loginAccount(username.trim(), password)
-      saveSession(nextSession)
-      setSession(nextSession)
+      if (game) {
+        await loginGameAccount(username, password, props.gameToken)
+        setGameUsername(username)
+      } else {
+        const nextSession = await loginAccount(username, password)
+        saveSession(nextSession)
+        setSession(nextSession)
+      }
     } catch (error) {
       setFormError(error instanceof LoginError ? error.message : 'Не удалось войти.')
     } finally {
@@ -71,24 +79,31 @@ export default function LoginPage({ onRegister }: LoginPageProps) {
       <section className="register-card" aria-labelledby="login-title">
         <Sprout />
         <p className="register-kicker">Farm RPG</p>
-        <h1 id="login-title">Вход</h1>
+        <h1 id="login-title">{title}</h1>
 
-        {session ? (
+        {session || gameUsername ? (
           <div className="register-success">
             <h2>Вы вошли</h2>
             <dl>
               <div>
                 <dt>Имя</dt>
-                <dd>{session.username}</dd>
+                <dd>{session?.username ?? gameUsername}</dd>
               </div>
-              <div>
-                <dt>Роль</dt>
-                <dd>{roleLabel(session.role)}</dd>
-              </div>
+              {session ? (
+                <div>
+                  <dt>Роль</dt>
+                  <dd>{roleLabel(session.role)}</dd>
+                </div>
+              ) : null}
             </dl>
-            <button type="button" className="register-button" onClick={logout}>
-              Выйти
+            <button type="button" className="register-button" onClick={game ? props.onBack : logout}>
+              {game ? 'Назад' : 'Выйти'}
             </button>
+            {!game ? (
+              <p className="register-switch">
+                <button type="button" onClick={props.onGameAuth}>Войти в игру</button>
+              </p>
+            ) : null}
           </div>
         ) : (
           <form className="register-form" onSubmit={onSubmit} noValidate>
@@ -126,9 +141,9 @@ export default function LoginPage({ onRegister }: LoginPageProps) {
               {pending ? 'Входим…' : 'Войти'}
             </button>
             <p className="register-switch">
-              Нет аккаунта?{' '}
-              <button type="button" onClick={onRegister}>
-                Зарегистрироваться
+              {game ? null : 'Нет аккаунта? '}
+              <button type="button" onClick={game ? props.onBack : props.onRegister}>
+                {game ? 'Назад' : 'Зарегистрироваться'}
               </button>
             </p>
           </form>
