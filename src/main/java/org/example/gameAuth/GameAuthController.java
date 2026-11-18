@@ -1,5 +1,7 @@
 package org.example.gameAuth;
 
+import org.example.gameHttp.GameCookie;
+
 import jakarta.validation.Valid;
 import org.example.auth.LoginRequest;
 import org.springframework.web.bind.annotation.PostMapping;

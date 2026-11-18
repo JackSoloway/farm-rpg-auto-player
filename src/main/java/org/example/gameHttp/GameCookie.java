@@ -1,4 +1,4 @@
-package org.example.gameAuth;
+package org.example.gameHttp;
 
 import java.util.Arrays;
 import java.util.Map;

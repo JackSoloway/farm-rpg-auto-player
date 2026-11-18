@@ -1,5 +1,7 @@
 package org.example.gameAuth;
 
+import org.example.gameHttp.GameCookie;
+
 import jakarta.persistence.*;
 import org.jspecify.annotations.Nullable;
 

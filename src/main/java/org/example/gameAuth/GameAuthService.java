@@ -1,5 +1,7 @@
 package org.example.gameAuth;
 
+import org.example.gameHttp.GameCookie;
+
 import org.example.auth.LoginRequest;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
