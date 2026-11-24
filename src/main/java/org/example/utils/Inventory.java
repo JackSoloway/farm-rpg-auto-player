@@ -13,8 +13,16 @@ public class Inventory {
     public int getInventorySize(GameCookie gameCookie) throws IOException, InterruptedException {
         var client = new GameHttpClientGet(GamePages.INVENTORY_URI, gameCookie);
         var response = client.send();
+        if (!response.success()) {
+            throw new IOException("Failed to retrieve inventory: HTTP " + response.statusCode());
+        }
+
         var htmlParser = new GameHtmlParser<>(Integer.class);
-        var parseResult = htmlParser.tryGetValue(response, new StringTemplate(inventorySizeTemplate), "[0-9.,]+");
-        return parseResult.success() ? parseResult.value() : 0;
+        var parseResult = htmlParser.tryGetValue(response, new StringTemplate(inventorySizeTemplate), "(?s:.*?)");
+        if (!parseResult.found()) {
+            throw new IllegalStateException("Inventory size was not found in the server response");
+        }
+
+        return parseResult.value();
     }
 }
