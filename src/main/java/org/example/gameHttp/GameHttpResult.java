@@ -5,4 +5,8 @@ public record GameHttpResult(int statusCode, String body) {
     public boolean success() {
         return statusCode >= 200 && statusCode < 300;
     }
+
+    public String getBody() {
+        return body;
+    }
 }
