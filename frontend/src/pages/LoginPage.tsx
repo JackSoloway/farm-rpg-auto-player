@@ -3,6 +3,7 @@ import { LoginError, loginAccount, loginGameAccount } from '../api/auth.ts'
 import { roleLabel } from '../roleLabel.ts'
 import { clearSession, loadSession, saveSession, type Session } from '../session.ts'
 import Sprout from './Sprout.tsx'
+import GameAccess from './GameAccess.tsx'
 import './RegisterPage.css'
 
 type FieldErrors = {
@@ -96,14 +97,12 @@ export default function LoginPage(props: LoginPageProps) {
                 </div>
               ) : null}
             </dl>
+            {session && !game ? (
+              <GameAccess session={session} onLogin={props.onGameAuth} />
+            ) : null}
             <button type="button" className="register-button" onClick={game ? props.onBack : logout}>
               {game ? 'Назад' : 'Выйти'}
             </button>
-            {!game ? (
-              <p className="register-switch">
-                <button type="button" onClick={props.onGameAuth}>Войти в игру</button>
-              </p>
-            ) : null}
           </div>
         ) : (
           <form className="register-form" onSubmit={onSubmit} noValidate>
