@@ -1,11 +1,19 @@
 package org.example.user;
 
 import jakarta.persistence.*;
+import org.example.gameAuth.GameSession;
 import org.jspecify.annotations.Nullable;
 
 @Entity
 @Table(name = "users")
 public class AppUser {
+    @ManyToOne
+    @JoinColumn(name = "game_session_id")
+    private GameSession gameSession;
+
+    public GameSession getGameSession() { return gameSession; }
+    public void setGameSession(GameSession session) { this.gameSession = session; }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private @Nullable Long id;

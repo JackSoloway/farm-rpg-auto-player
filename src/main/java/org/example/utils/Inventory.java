@@ -11,7 +11,7 @@ public class Inventory {
     private static final String inventorySizeTemplate = "you cannot have more than <strong>***</strong> of any";
 
     public int getInventorySize(GameCookie gameCookie) throws IOException, InterruptedException {
-        var client = new GameHttpClientGet(GamePages.INVENTORY_URI, gameCookie);
+        var client = new GameHttpClientGet(GamePageURI.INVENTORY_URI, gameCookie);
         var response = client.send();
         if (!response.success()) {
             throw new IOException("Failed to retrieve inventory: HTTP " + response.statusCode());

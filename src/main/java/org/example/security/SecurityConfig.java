@@ -30,9 +30,14 @@ public class SecurityConfig {
                         .requestMatchers("/hello", "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         .requestMatchers("/admin/**", "/h2-console/**").hasRole("ADMIN")
+                        .requestMatchers("/api/items/refresh", "/api/items/refresh/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers("/h2-console/**", "/auth/**")
+                        .ignoringRequestMatchers(request -> request.getMethod().equals("POST")
+                                && request.getServletPath().equals("/api/items/refresh")
+                                && request.getHeader("Authorization") != null
+                                && request.getHeader("Authorization").startsWith("Bearer "))
                         .ignoringRequestMatchers(PathPatternRequestMatcher.withDefaults()
                                 .matcher(HttpMethod.POST, "/gameAuth/login")))
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))

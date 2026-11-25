@@ -1,6 +1,8 @@
 package org.example.gameAuth;
 
 import org.example.gameHttp.GameCookie;
+import org.example.user.UserRepository;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.example.auth.LoginRequest;
 import org.jspecify.annotations.NonNull;
@@ -28,13 +30,15 @@ public class GameAuthService {
     private static final String _successLoginBody = "success";
 
     private final GameSessionRepository gameSessionRepository;
+    private final UserRepository users;
 
-    public GameAuthService(GameSessionRepository gameSessionRepository) {
+    public GameAuthService(GameSessionRepository gameSessionRepository, UserRepository users) {
         this.gameSessionRepository = gameSessionRepository;
+        this.users = users;
     }
 
     @Transactional
-    public GameCookie login(LoginRequest loginRequest) {
+    public GameCookie login(LoginRequest loginRequest, String appUsername) {
         var cookieManager = new CookieManager();
 
         try (var client = HttpClient.newBuilder().cookieHandler(cookieManager).build()) {
@@ -57,10 +61,18 @@ public class GameAuthService {
                 throw new GameAuthFailedException(HttpStatus.UNAUTHORIZED);
 
             var gameCookie = new GameCookie(extractCookies(cookieManager));
-            saveOrUpdateSession(loginRequest.username(), gameCookie);
+            var session = saveOrUpdateSession(loginRequest.username(), gameCookie);
+            var user = users.findByUsername(appUsername).orElseThrow();
+            user.setGameSession(session);
+            users.save(user);
             return gameCookie;
+        } catch (GameAuthFailedException e) {
+            throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Game login interrupted");
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Unable to log in to game", e);
         }
     }
 
@@ -87,10 +99,10 @@ public class GameAuthService {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private void saveOrUpdateSession(String username, GameCookie cookie) {
+    private GameSession saveOrUpdateSession(String username, GameCookie cookie) {
         var session = gameSessionRepository.findByGameUsername(username)
                 .orElseGet(() -> new GameSession(username, cookie));
         session.setCookie(cookie);
-        gameSessionRepository.save(session);
+        return gameSessionRepository.save(session);
     }
 }
